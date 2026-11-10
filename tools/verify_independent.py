@@ -17,6 +17,7 @@ import io
 import json
 import os
 from pathlib import Path
+import socket
 import sqlite3
 import stat
 import subprocess
@@ -528,17 +529,18 @@ def check_bundle(path: Path, *, demo: bool = False, input_bytes: bytes | None = 
     }
 
 
-def _check_network_isolation() -> bool:
-    if sys.platform.startswith("linux"):
-        net_dir = Path("/sys/class/net")
-        if net_dir.is_dir():
-            ifaces = {p.name for p in net_dir.iterdir()}
-            require(ifaces <= {"lo"}, "Interface de rede externa visível no namespace isolado")
-        route_file = Path("/proc/net/route")
-        if route_file.is_file():
-            lines = [ln.strip() for ln in route_file.read_text(encoding="ascii").splitlines() if ln.strip()]
-            require(len(lines) <= 1, "Tabela de rotas IPv4 não está vazia no namespace isolado")
-    return True
+def _check_network_isolation() -> dict[str, object]:
+    linux = sys.platform.startswith("linux")
+    loopback_only = linux and all(name == "lo" for _, name in socket.if_nameindex())
+    route_file = Path("/proc/net/route")
+    no_routes = linux and route_file.is_file() and not route_file.read_text(encoding="ascii").splitlines()[1:]
+    verified = bool(linux and loopback_only and no_routes)
+    require(verified, "É necessário um namespace Linux sem interfaces externas e sem rotas")
+    return {
+        "linuxLoopbackOnly": bool(loopback_only),
+        "noIpv4Routes": bool(no_routes),
+        "verified": verified,
+    }
 
 
 def _synthetic_edge_scenario() -> dict[str, object]:
