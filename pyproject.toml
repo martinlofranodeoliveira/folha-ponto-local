@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "folha-ponto-local"
+version = "1.0.0"
+description = "Apuração local de espelho de ponto e banco de horas em minutos exatos: turnos noturnos, intervalos, tolerâncias e alertas."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Martin Lofrano / LOFRANO TECNOLOGIA"}]
+dependencies = []
+classifiers = [
+  "Environment :: Console",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Office/Business",
+  "Topic :: Utilities",
+]
+
+[project.scripts]
+folha-ponto-local = "folha_ponto_local.cli:main"
+
+[project.urls]
+Homepage = "https://lofranotecnologia.com.br/"
+Repository = "https://github.com/martinlofranodeoliveira/folha-ponto-local"
+Issues = "https://github.com/martinlofranodeoliveira/folha-ponto-local/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["folha_ponto_local"]
+namespaces = false
+
+[tool.setuptools.package-data]
+folha_ponto_local = ["data/*.json"]

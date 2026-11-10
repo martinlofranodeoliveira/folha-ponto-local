@@ -1,0 +1,72 @@
+name: Testes e distribuição
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python ${{ matrix.python }} em ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python: '3.11'}
+          - {os: ubuntu-latest, python: '3.12'}
+          - {os: ubuntu-latest, python: '3.13'}
+          - {os: ubuntu-latest, python: '3.14'}
+          - {os: windows-latest, python: '3.14'}
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Preparar Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Instalar a CLI e as ferramentas fixadas de build
+        run: python -m pip install . -r requirements-build.txt
+      - name: Testar cálculo, arquivos, recusas e leitores independentes
+        run: python -m unittest discover -s tests -v
+      - name: Construir wheel e fonte
+        run: python -m build
+      - name: Conferir arquivos, metadados, licença e RECORD
+        run: python scripts/check_distribution.py --dist dist
+      - name: Exercitar wheel instalado fora da fonte
+        run: python scripts/check_distribution.py --install dist/folha_ponto_local-1.0.0-py3-none-any.whl
+      - name: Exercitar fonte instalada fora da árvore original
+        run: python scripts/check_distribution.py --install dist/folha_ponto_local-1.0.0.tar.gz
+
+  independente:
+    name: Oráculo discreto e SQLite sem rede
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Preparar Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - name: Instalar a CLI
+        run: python -m pip install .
+      - name: Conferir namespace isolado sem rede
+        run: unshare --user --map-root-user --net -- true
+      - name: Conferir resultados da CLI instalada com oráculo discreto e SQLite sem rede
+        run: |
+          mkdir -p local
+          unshare --user --map-root-user --net -- python tools/verify_independent.py --require-network-isolation --cli "$(command -v folha-ponto-local)" --report local/verificacao-ci.json

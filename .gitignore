@@ -1,0 +1,11 @@
+.venv*/
+local/
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.openai/
+.impeccable/
+.env*
+CONTRACT.md

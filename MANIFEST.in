@@ -1,0 +1,14 @@
+include README.md LICENSE pyproject.toml MANIFEST.in requirements-build.txt .gitignore .gitattributes
+recursive-include .github/workflows *.yml
+recursive-include src/folha_ponto_local *.py *.json
+recursive-include tests *.py
+recursive-include scripts *.py
+recursive-include tools *.py
+recursive-include docs *.md *.png
+prune local
+prune dist
+prune build
+prune .venv-build
+prune .openai
+prune .impeccable
+global-exclude *.py[cod] __pycache__ .env .env.*
